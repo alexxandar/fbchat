@@ -16,7 +16,9 @@ from typing import Optional, Mapping, Callable, Any
 
 
 SERVER_JS_DEFINE_REGEX = re.compile(
-    r'(?:"ServerJS".{,100}\.handle\({.*"define":)|(?:require\("ServerJSDefine"\)\)?\.handleDefines\()'
+    r'(?:"ServerJS".{,100}\.handle\({.*"define":)'
+    r'|(?:ServerJS.{,100}\.handleWithCustomApplyEach\(ScheduledApplyEach,{.*"define":)'
+    r'|(?:require\("ServerJSDefine"\)\)?\.handleDefines\()'
 )
 SERVER_JS_DEFINE_JSON_DECODER = json.JSONDecoder()
 
@@ -36,8 +38,6 @@ def parse_server_js_define(html: str) -> Mapping[str, Any]:
         raise _exception.ParseError("Could not find any ServerJSDefine", data=html)
     if len(define_splits) < 2:
         raise _exception.ParseError("Could not find enough ServerJSDefine", data=html)
-    if len(define_splits) > 2:
-        raise _exception.ParseError("Found too many ServerJSDefine", data=define_splits)
     # Parse entries (should be two)
     for entry in define_splits:
         try:
@@ -411,7 +411,7 @@ class Session:
 
         # Make a request to the main page to retrieve ServerJSDefine entries
         try:
-            r = session.get(prefix_url("/"), allow_redirects=False)
+            r = session.get(prefix_url("/"), allow_redirects=True)
         except requests.RequestException as e:
             _exception.handle_requests_error(e)
         _exception.handle_http_error(r.status_code)
